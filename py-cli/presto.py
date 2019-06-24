@@ -3,6 +3,7 @@ import json
 import urllib3
 import getopt
 import sys
+import time
 import readline
 from prettytable import PrettyTable
 
@@ -69,15 +70,26 @@ def fetch(host, port, user, passwd, sql):
 		print("fetch end\n")
 		print("nextUri not exists\n")
 		return
+	next_uri = st_data['nextUri']
+	i = 0
+	ori_data = {}
+	while i < 100:
+		data_des = urllib3.PoolManager().request('GET', next_uri)
+		ori_data = json.loads(data_des.data, encoding='utf-8')
+		if 'error' in ori_data.keys():
+			print("error\n")
+			print(ori_data['error']['message'])
+			print("\n")
+			return
 		
-	data_des = urllib3.PoolManager().request('GET', st_data['nextUri'])
-	ori_data = json.loads(data_des.data, encoding='utf-8')
-	if 'error' in ori_data.keys():
-		print("error\n")
-		print(ori_data['error']['message'])
-		print("\n")
-		return
-
+		if 'data' in ori_data.keys() and len(ori_data['data']) > 0:
+			
+			break
+		
+		next_uri = ori_data['nextUri']
+		i += 1
+		time.sleep(3)
+		
 	columns = []
 	for oneColumn in ori_data['columns']:
 		columns.append(oneColumn['name'])
